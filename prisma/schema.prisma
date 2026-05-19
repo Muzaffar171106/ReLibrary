@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  user
+}
+
+enum BorrowStatus {
+  active
+  returned
+  overdue
+}
+
+model User {
+  id            String    @id @default(uuid())
+  fullName      String
+  email         String    @unique
+  password      String
+  role          Role      @default(user)
+  phone         String?
+  profileImage  String?
+
+  borrows       Borrow[]
+  favorites     Favorite[]
+  reviews       Review[]
+
+  createdAt     DateTime @default(now())
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+
+  books     Book[]
+}
+
+model Book {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  author             String
+  description        String?
+  image              String?
+  pdfFile            String?
+
+  quantity           Int
+  availableQuantity  Int
+
+  language           String?
+  publishedYear      Int?
+  isbn               String?   @unique
+  pages              Int?
+
+  categoryId         Int
+  category           Category  @relation(fields: [categoryId], references: [id])
+
+  borrows            Borrow[]
+  favorites          Favorite[]
+  reviews            Review[]
+
+  createdAt          DateTime @default(now())
+}
+
+model Borrow {
+  id          Int            @id @default(autoincrement())
+
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+
+  bookId      Int
+  book        Book           @relation(fields: [bookId], references: [id])
+
+  borrowDate  DateTime       @default(now())
+  returnDate  DateTime
+
+  status      BorrowStatus   @default(active)
+}
+
+model Favorite {
+  id        Int    @id @default(autoincrement())
+
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+
+  bookId    Int
+  book      Book   @relation(fields: [bookId], references: [id])
+
+  @@unique([userId, bookId])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  bookId    Int
+  book      Book     @relation(fields: [bookId], references: [id])
+
+  rating    Int
+  comment   String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, bookId])
+}
